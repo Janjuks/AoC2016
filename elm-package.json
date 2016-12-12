@@ -1,7 +1,7 @@
 {
     "version": "1.0.0",
-    "summary": "Attempt at learning Elm, first FP language experience, and solving AoC puzzles",
-    "repository": "https://github.com/janjuks/aoc2016.git",
+    "summary": "My attempt at learning Elm, first FP language experience, and solving AoC puzzles",
+    "repository": "https://github.com/Janjuks/AoC2016",
     "license": "BSD3",
     "source-directories": [
         "."
