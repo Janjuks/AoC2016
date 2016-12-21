@@ -2,29 +2,45 @@ module Main exposing (..)
 
 import Html exposing (..)
 import String exposing (..)
-import Regex exposing (..)
+import Day3.Input exposing (puzzleInput)
 
 
 main : Html a
 main =
-    text (toString <| maybeTriangles)
+    text (toString <| trianglesCount)
 
 
-maybeTriangles : List ( Int, Int, Int )
+trianglesCount : Int
+trianglesCount =
+    let
+        boolTriangles =
+            List.map isTriangle maybeTriangles
+
+        trueTriangles =
+            List.filter (\triangle -> triangle) boolTriangles
+    in
+        List.length trueTriangles
+
+
+isTriangle : List Int -> Bool
+isTriangle sides =
+    let
+        max =
+            Maybe.withDefault -1 (List.maximum sides)
+    in
+        if List.sum sides - max > max then
+            True
+        else
+            False
+
+
+maybeTriangles : List (List Int)
 maybeTriangles =
     List.map
-        (\arr ->
-            let
-                sideA =
-                    Maybe.withDefault "-1" <| List.head arr
-
-                sideB =
-                    Maybe.withDefault "-1" <| List.head <| List.drop 1 arr
-
-                sideC =
-                    Maybe.withDefault "-1" <| List.head <| List.drop 2 arr
-            in
-                ( sideA, sideB, sideC )
+        (List.map
+            (\sideLength ->
+                Result.withDefault -1 (toInt sideLength)
+            )
         )
         stringsOfNumbers
 
