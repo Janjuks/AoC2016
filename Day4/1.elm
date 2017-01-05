@@ -3,6 +3,7 @@ module Main exposing (..)
 import Html exposing (..)
 import String exposing (..)
 import Regex exposing (..)
+import Dict exposing (..)
 import Day4.Input exposing (puzzleInput)
 
 
@@ -42,6 +43,51 @@ type alias Room =
 getRooms : List String -> List Room
 getRooms codedRooms =
     []
+
+
+getChecksum : List String -> Dict String Int -> String
+getChecksum chars checksumDict =
+    let
+        char =
+            List.head chars
+
+        newDict =
+            case char of
+                Nothing ->
+                    checksumDict
+
+                Just val ->
+                    Dict.update val (\v -> Just <| (Maybe.withDefault 0 v) + 1) checksumDict
+    in
+        case char of
+            Nothing ->
+                checksumDict
+                    |> Dict.toList
+                    |> List.sortWith checkSumComparison
+                    |> List.unzip
+                    |> Tuple.first
+                    |> List.take 5
+                    |> concat
+
+            Just val ->
+                getChecksum (List.drop 1 chars) newDict
+
+
+
+--sort first by highest char repeat count and if equals then alphabetically
+
+
+checkSumComparison : ( comparable, comparable1 ) -> ( comparable, comparable1 ) -> Order
+checkSumComparison ( k1, v1 ) ( k2, v2 ) =
+    case compare v1 v2 of
+        LT ->
+            GT
+
+        GT ->
+            LT
+
+        EQ ->
+            compare k1 k2
 
 
 getRoom : String -> Room
