@@ -9,19 +9,18 @@ import Day4.Input exposing (puzzleInput)
 
 main : Html a
 main =
-    text "a"
+    text <| toString res
 
 
-
-{- name
-   ^([\D]+)
--}
-{- id
-   ([\d]+)
--}
-{- checksum
-   \[(\w+)\]
--}
+res : Int
+res =
+    puzzleInput
+        |> lines
+        |> List.map getRoom
+        |> Debug.log "room"
+        |> Debug.log "filteredRooms" List.filter (\room -> room.realChecksum == room.givenChecksum)
+        |> Debug.log "ids" List.map .id
+        |> List.sum
 
 
 regexes : { checksum : Regex, id : Regex, name : Regex }
@@ -40,11 +39,6 @@ type alias Room =
     }
 
 
-getRooms : List String -> List Room
-getRooms codedRooms =
-    []
-
-
 getChecksum : List String -> Dict String Int -> String
 getChecksum chars checksumDict =
     let
@@ -61,7 +55,7 @@ getChecksum chars checksumDict =
     in
         case char of
             Nothing ->
-                checksumDict
+                newDict
                     |> Dict.toList
                     |> List.sortWith checkSumComparison
                     |> List.unzip
@@ -114,11 +108,13 @@ getRoom codedRoom =
             codedRoom
                 |> Regex.find All regexes.checksum
                 |> List.head
-                |> Maybe.map .match
+                |> Maybe.map .submatches
+                |> Maybe.withDefault []
+                |> List.head
+                |> Maybe.withDefault Maybe.Nothing
                 |> Maybe.withDefault ""
+
+        realChecksum =
+            getChecksum (String.split "" name) Dict.empty
     in
-        { name = name, id = id, realChecksum = "a", givenChecksum = checksum }
-
-
-
---lines puzzleInput
+        { name = name, id = id, realChecksum = realChecksum, givenChecksum = checksum }
