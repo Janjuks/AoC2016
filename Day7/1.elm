@@ -16,17 +16,14 @@ res =
     puzzleInput
         |> lines
         |> List.filter validIP
-        |> Debug.log "validIPs?"
         |> List.length
 
 
 validIP : String -> Bool
 validIP ip =
     ip
-        |> find (AtMost 1) regexes.abba
-        |> List.isEmpty
-        |> not
-        |> (&&) (find (AtMost 1) regexes.hypernetAbba ip |> List.isEmpty)
+        |> Regex.contains regexes.abba
+        |> (&&) (not (Regex.contains regexes.hypernetAbba ip))
 
 
 regexes : { hypernetAbba : Regex, abba : Regex }
