@@ -21,13 +21,36 @@ res =
 
 validIP : String -> Bool
 validIP ip =
-    ip
-        |> Regex.contains regexes.ssl1
-        |> (||) (Regex.contains regexes.ssl2 ip)
+    let
+        aba =
+            ip
+                |> Regex.find (AtMost 1) abaRgx
+                |> List.concatMap .submatches
+                |> List.head
+                |> Maybe.andThen identity
+                |> Maybe.withDefault ""
+                |> Debug.log "aba"
+
+        bab =
+            if aba == "" then
+                ""
+            else
+                aba
+                    |> String.slice 0 1
+                    |> babRgx (String.slice 1 2 aba)
+                    |> flip (Regex.find (AtMost 1)) ip
+                    |> List.head
+                    |> Maybe.map .match
+                    |> Maybe.withDefault ""
+    in
+        bab /= ""
 
 
-regexes : { ssl1 : Regex, ssl2 : Regex }
-regexes =
-    { ssl1 = regex "\\[\\w*(\\w)(?!\\1)(\\w)\\1\\w*\\]\\w*\\2\\1\\2"
-    , ssl2 = regex "(\\w)(?!\\1)(\\w)\\1\\w*\\[\\w*\\2\\1\\2\\w*\\]"
-    }
+abaRgx : Regex
+abaRgx =
+    regex "(?!\\[)\\w*((\\w)(?!\\2)(\\w)\\2)\\w*(?!\\])"
+
+
+babRgx : String -> String -> Regex
+babRgx b a =
+    String.join "" [ "\\[\\w*", b, a, b, "\\w*\\]" ] |> Debug.log "babRgx" |> regex
