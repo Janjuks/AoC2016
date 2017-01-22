@@ -22,35 +22,45 @@ res =
 validIP : String -> Bool
 validIP ip =
     let
-        aba =
+        abas =
+            ip
+                |> Regex.replace All (regex "\\[\\w*\\]") (\_ -> " ")
+                |> findAbas []
+    in
+        abas
+            |> List.any (\v -> babExists ip v)
+
+
+findAbas : List String -> String -> List String
+findAbas abas ip =
+    let
+        ( aba, abaIndex ) =
             ip
                 |> Regex.find (AtMost 1) abaRgx
-                |> List.concatMap .submatches
+                |> List.map (\v -> ( v.match, v.index ))
                 |> List.head
-                |> Maybe.andThen identity
-                |> Maybe.withDefault ""
-                |> Debug.log "aba"
-
-        bab =
-            if aba == "" then
-                ""
-            else
-                aba
-                    |> String.slice 0 1
-                    |> babRgx (String.slice 1 2 aba)
-                    |> flip (Regex.find (AtMost 1)) ip
-                    |> List.head
-                    |> Maybe.map .match
-                    |> Maybe.withDefault ""
+                |> Maybe.withDefault ( "", -1 )
     in
-        bab /= ""
+        if abaIndex == -1 then
+            abas
+        else
+            findAbas (aba :: abas) (dropLeft (abaIndex + 1) ip)
+
+
+babExists : String -> String -> Bool
+babExists ip aba =
+    aba
+        |> String.slice 0 1
+        |> babRgx (String.slice 1 2 aba)
+        |> flip Regex.contains ip
 
 
 abaRgx : Regex
 abaRgx =
-    regex "(?!\\[)\\w*((\\w)(?!\\2)(\\w)\\2)\\w*(?!\\])"
+    regex "((\\w)(?!\\2)(\\w)\\2)"
 
 
 babRgx : String -> String -> Regex
 babRgx b a =
-    String.join "" [ "\\[\\w*", b, a, b, "\\w*\\]" ] |> Debug.log "babRgx" |> regex
+    String.join "" [ "\\[\\w*", b, a, b, "\\w*\\]" ]
+        |> regex
