@@ -7,7 +7,11 @@ import String exposing (..)
 -- import Regex exposing (..)
 
 import List exposing (..)
-import Array.Hamt as Array
+
+
+-- import Array.Hamt as Array
+
+import Array exposing (..)
 import Day8.Input exposing (puzzleInput, exampleInput)
 
 
@@ -16,12 +20,12 @@ import Day8.Input exposing (puzzleInput, exampleInput)
 
 screenWidth : Int
 screenWidth =
-    7
+    50
 
 
 screenHeight : Int
 screenHeight =
-    3
+    6
 
 
 type Screen
@@ -71,7 +75,7 @@ main =
 
 res : Html msg
 res =
-    execInstruction screen instructions
+    execInstruction screen (List.take 28 instructions)
         |> screenView
 
 
@@ -92,20 +96,21 @@ execInstruction (Screen screen) instructions =
                     case instr of
                         Rect ( Width w, Height h ) ->
                             drawRect (Screen screen) (Width w) (Height h)
-                        RotateRow (Row row, Amount amount) ->
+
+                        RotateRow ( Row row, Amount amount ) ->
                             rotateRow (Screen screen) (Row row) (Amount amount)
-                        RotateCol (Column col, Amount amount) ->
+
+                        RotateCol ( Column col, Amount amount ) ->
                             rotateColumn (Screen screen) (Column col) (Amount amount)
 
                 Nothing ->
                     Screen screen
-                    |> Debug.log "end of instructions"
+                        |> Debug.log "end of instructions"
 
         screenAsList =
-          screen
-          |> Array.toList
-          |> List.map Array.toList
-          |> Debug.log "newScreen"
+            screen
+                |> Array.toList
+                |> List.map Array.toList
     in
         case instrMaybe of
             Just val ->
@@ -143,7 +148,10 @@ rotateColumn (Screen screen) (Column col_) (Amount amount) =
             (\y row ->
                 Array.indexedMap
                     (\x col ->
-                        getColCell (Screen screen) (Row y) (Column x) (Amount amount)
+                        if x == col_ then
+                            getColCell (Screen screen) (Row y) (Column x) (Amount amount)
+                        else
+                            col
                     )
                     row
             )
@@ -154,9 +162,9 @@ rotateColumn (Screen screen) (Column col_) (Amount amount) =
 getColCell : Screen -> Row -> Column -> Amount -> Bool
 getColCell (Screen screen) (Row row) (Column col) (Amount amount) =
     screen
-        |> Array.get (row % screenHeight)
+        |> Array.get row
         |> Maybe.withDefault Array.empty
-        |> Array.get col
+        |> Array.get ((col - amount) % screenHeight)
         |> Maybe.withDefault False
 
 
@@ -174,6 +182,10 @@ rotateRow (Screen screen) (Row row_) (Amount amount) =
             )
             screen
         )
+
+
+
+-- |> Debug.log "rotateRow screen"
 
 
 parseRect : String -> Instruction
@@ -266,7 +278,7 @@ parseInstruction instr =
 
 instructions : List Instruction
 instructions =
-    exampleInput
+    puzzleInput
         |> lines
         |> List.map parseInstruction
 
@@ -280,6 +292,7 @@ screenView (Screen screen) =
     screen
         |> Array.toList
         |> List.map rowView
+        |> (::) headerView
         |> table []
 
 
@@ -288,6 +301,7 @@ rowView row =
     row
         |> Array.toList
         |> List.map colView
+        |> (::) (td [] [ text "|" ])
         |> tr []
 
 
@@ -297,3 +311,11 @@ colView col =
         td [] [ text "#" ]
     else
         td [] [ text "." ]
+
+
+headerView : Html msg
+headerView =
+    List.range 0 (screenWidth - 1)
+        |> List.map (\v -> th [] [ v |> toString |> text ])
+        |> (::) (th [] [ text "*" ])
+        |> tr []
