@@ -2,15 +2,7 @@ module Main exposing (..)
 
 import Html exposing (..)
 import String exposing (..)
-
-
--- import Regex exposing (..)
-
 import List exposing (..)
-
-
--- import Array.Hamt as Array
-
 import Array exposing (..)
 import Day8.Input exposing (puzzleInput, exampleInput)
 
@@ -66,16 +58,9 @@ main : Html a
 main =
     res
 
-
-
--- screen
---     |> flip (flip drawRect (Width 3)) (Height 2)
---     |> screenView
-
-
 res : Html msg
 res =
-    execInstruction screen (List.take 28 instructions)
+    execInstruction screen (instructions)
         |> screenView
 
 
@@ -105,7 +90,6 @@ execInstruction (Screen screen) instructions =
 
                 Nothing ->
                     Screen screen
-                        |> Debug.log "end of instructions"
 
         screenAsList =
             screen
@@ -143,13 +127,21 @@ drawRect (Screen screen) (Width w) (Height h) =
 
 rotateColumn : Screen -> Column -> Amount -> Screen
 rotateColumn (Screen screen) (Column col_) (Amount amount) =
+  let
+    originalColumn =
+      screen
+      |> Array.map (\r -> Array.get col_ r |> Maybe.withDefault False)
+
+  in
     Screen
         (Array.indexedMap
             (\y row ->
                 Array.indexedMap
                     (\x col ->
                         if x == col_ then
-                            getColCell (Screen screen) (Row y) (Column x) (Amount amount)
+                            originalColumn
+                            |> Array.get ((y - amount) % screenHeight)
+                            |> Maybe.withDefault False
                         else
                             col
                     )
@@ -157,15 +149,6 @@ rotateColumn (Screen screen) (Column col_) (Amount amount) =
             )
             screen
         )
-
-
-getColCell : Screen -> Row -> Column -> Amount -> Bool
-getColCell (Screen screen) (Row row) (Column col) (Amount amount) =
-    screen
-        |> Array.get row
-        |> Maybe.withDefault Array.empty
-        |> Array.get ((col - amount) % screenHeight)
-        |> Maybe.withDefault False
 
 
 rotateRow : Screen -> Row -> Amount -> Screen
@@ -182,10 +165,6 @@ rotateRow (Screen screen) (Row row_) (Amount amount) =
             )
             screen
         )
-
-
-
--- |> Debug.log "rotateRow screen"
 
 
 parseRect : String -> Instruction
