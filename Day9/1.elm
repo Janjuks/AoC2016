@@ -7,8 +7,10 @@ import Day9.Input exposing (exampleInput, puzzleInput)
 
 main : Html a
 main =
-    exampleInput
+    puzzleInput
         |> flip decodeFile ""
+        |> length
+        |> toString
         |> text
 
 
@@ -28,7 +30,7 @@ decodeFile file decodedFile =
                 |> Maybe.withDefault -1
 
         ( charCount, repeatCount ) =
-            if openingBracketIndex /= -1 || closingBracketIndex /= -1 then
+            if openingBracketIndex /= -1 && closingBracketIndex /= -1 then
                 file
                     |> slice (openingBracketIndex + 1) closingBracketIndex
                     |> getMarker
@@ -36,15 +38,15 @@ decodeFile file decodedFile =
                 ( -1, -1 )
 
         newDecodedFile =
-            if openingBracketIndex /= -1 || closingBracketIndex /= -1 then
+            if openingBracketIndex /= -1 && closingBracketIndex /= -1 then
                 file
                     |> slice 0 openingBracketIndex
                     |> flip append (getRepeatedPhrase file (closingBracketIndex + 1) charCount repeatCount)
-                    |> flip append decodedFile
+                    |> append decodedFile
             else
                 decodedFile
     in
-        if openingBracketIndex /= -1 || closingBracketIndex /= -1 then
+        if openingBracketIndex /= -1 && closingBracketIndex /= -1 then
             decodeFile (slice (closingBracketIndex + 1 + charCount) (length file) file) newDecodedFile
         else
             newDecodedFile ++ file
@@ -76,4 +78,3 @@ getRepeatedPhrase file startIndex charCount repeatCount =
     file
         |> slice startIndex (startIndex + charCount)
         |> repeat repeatCount
-        |> Debug.log "repeatetPhrase"
