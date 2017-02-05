@@ -5,34 +5,18 @@ import String exposing (..)
 import Regex exposing (..)
 import Day9.Input exposing (exampleInput, puzzleInput)
 
-
 main : Html a
 main =
-    exampleInput
-        |> decodeFile
-        |> text
+      decodeFile puzzleInput
+      |> toString
+      |> text
 
 
-
--- let
---     res =
---         decodeFile exampleInput ""
---
---     resLi =
---         li [] [ text res ]
---
---     resLengthLi =
---         li [] [ res |> length |> toString |> text ]
--- in
---     ul [] (resLi :: [ resLengthLi ])
-
-
-decodeFile : String -> String
+decodeFile : String -> Int
 decodeFile file =
     let
         allMarkers =
             file
-                |> Debug.log "file"
                 |> Regex.find All markerRgx
                 |> List.map getMarker
 
@@ -41,41 +25,45 @@ decodeFile file =
                 |> List.filter (isTopLevelMarker allMarkers)
     in
         if List.isEmpty topLevelMarkers then
-            file
-                |> Debug.log "decodedFile"
+            length file
         else
             topLevelMarkers
                 |> List.map (repeatSliceDecode file topLevelMarkers)
-                |> concat
-                |> Debug.log "decodedFile"
+                |> List.sum
 
 
-
--- List.length allMarkers
---     |> toString
---     |> flip (++) " "
---     |> flip (++) (topLevelMarkers |> List.length |> toString)
-
-
-repeatSliceDecode : String -> List Marker -> Marker -> String
+repeatSliceDecode : String -> List Marker -> Marker -> Int
 repeatSliceDecode file markers marker =
-    sliceByMarker file markers marker
-        |> Debug.log "slicedByMarker"
-        |> decodeFile
-        -- |> Debug.log "decodedAfterSlice"
-        |>
-            repeat marker.repeatCount
+    let
+        slice =
+            sliceByMarker file markers marker
+    in
+        decodeFile slice.mid
+          |> (*) marker.repeatCount
+          |> (+) (length slice.prefix)
+          |> (+) (length slice.suffix)
 
 
-
--- |> Debug.log "repeated"
-
-
-sliceByMarker : String -> List Marker -> Marker -> String
+sliceByMarker : String -> List Marker -> Marker -> Slice
 sliceByMarker file markers marker =
     let
+        prefix =
+            file
+                |> slice prefixStartIndex marker.startIndex
+                |> trim
+
+        mid =
+            file
+                |> slice (marker.endIndex + 1) (marker.endIndex + marker.charCount + 1)
+                |> trim
+
+        suffix =
+            file
+                |> slice (marker.endIndex + marker.charCount + 1) suffixEndIndex
+                |> trim
+
         --slice till next marker or end of file
-        endIndex =
+        suffixEndIndex =
             markers
                 |> List.filter (\m -> m.startIndex > marker.startIndex)
                 |> List.head
@@ -86,9 +74,23 @@ sliceByMarker file markers marker =
                     , endIndex = 0
                     }
                 |> .startIndex
+
+        previousMarker =
+            markers
+                |> List.filter (\m -> m.startIndex < marker.startIndex)
+                |> List.reverse
+                |> List.head
+
+        prefixStartIndex =
+            case previousMarker of
+              --
+                Nothing ->
+                    0
+
+                Just val ->
+                  marker.startIndex
     in
-        file
-            |> slice (marker.endIndex + 1) endIndex
+        { prefix = prefix, mid = mid, suffix = suffix }
 
 
 isTopLevelMarker : List Marker -> Marker -> Bool
@@ -96,8 +98,23 @@ isTopLevelMarker allMarkers marker =
     --True if none of previous markers' range overlaps current marker's index
     allMarkers
         |> List.filter (\m -> m.startIndex < marker.startIndex)
-        |> List.any (\m -> m.endIndex + -1 + marker.charCount > marker.startIndex)
+        |> List.any (\m -> m.endIndex + -1 + m.charCount >= marker.endIndex)
         |> not
+
+
+getMarkers : String -> List Marker
+getMarkers file =
+    let
+        allMarkers =
+            file
+                |> Regex.find All markerRgx
+                |> List.map getMarker
+
+        topLevelMarkers =
+            allMarkers
+                |> List.filter (isTopLevelMarker allMarkers)
+    in
+        topLevelMarkers
 
 
 getMarker : Match -> Marker
@@ -147,4 +164,11 @@ type alias Marker =
     , repeatCount : Int
     , startIndex : Int
     , endIndex : Int
+    }
+
+
+type alias Slice =
+    { prefix : String
+    , mid : String
+    , suffix : String
     }
